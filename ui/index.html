@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Personal AI Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <p class="eyebrow">Basic UI</p>
+        <h1>Chat with your `main.py` app</h1>
+        <p class="sidebar-copy">
+          This UI sends messages to the FastAPI `/chat` route and keeps a
+          thread ID so your conversation state stays grouped together.
+        </p>
+
+        <label class="field">
+          <span>Thread ID</span>
+          <input id="threadIdInput" type="text" autocomplete="off" />
+        </label>
+
+        <div class="sidebar-actions">
+          <button id="newThreadButton" class="ghost-button" type="button">
+            New thread
+          </button>
+          <span id="statusBadge" class="status-badge">Idle</span>
+        </div>
+
+        <p class="sidebar-note">
+          Start your FastAPI app first, then run the UI server inside this
+          folder.
+        </p>
+      </aside>
+
+      <main class="chat-panel">
+        <div id="messageList" class="message-list" aria-live="polite"></div>
+
+        <form id="chatForm" class="composer">
+          <label class="composer-label" for="messageInput">Your message</label>
+          <textarea
+            id="messageInput"
+            rows="1"
+            placeholder="Ask something..."
+            required
+          ></textarea>
+
+          <div class="composer-actions">
+            <p class="composer-hint">Enter to send. Shift + Enter for a new line.</p>
+            <button id="sendButton" class="send-button" type="submit">
+              Send
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <template id="messageTemplate">
+      <article class="message">
+        <div class="message-meta">
+          <span class="message-role"></span>
+        </div>
+        <p class="message-content"></p>
+      </article>
+    </template>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
