@@ -11,6 +11,7 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.prebuilt import create_react_agent
 
 
+
 load_dotenv()
 apikey=os.getenv('OLLAMA_API_KEY')
 
@@ -50,11 +51,21 @@ graph.add_edge(START,'AI_agent')
 graph.add_edge('AI_agent',END)
 
 
-checkpoint = MemorySaver()
+
+DB_URI = "postgresql://postgres:postgres@localhost:5442/postgres"
+
+t1 = {"configurable":{'thread_id': 'test_id'}}
+
+
+with PostgresSaver.from_conn_string(DB_URI) as cp:
+
+    work_flow = graph.compile(checkpointer=cp)
+
+    
 
 
 
-work_flow = graph.compile(checkpointer=checkpoint)
+
 
 
 

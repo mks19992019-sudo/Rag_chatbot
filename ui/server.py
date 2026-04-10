@@ -14,6 +14,7 @@ from urllib.request import Request, urlopen
 HOST = os.getenv("UI_HOST", "127.0.0.1")
 PORT = int(os.getenv("UI_PORT", "3000"))
 BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000/chat")
+BACKEND_TIMEOUT = float(os.getenv("BACKEND_TIMEOUT_SECONDS", "120"))
 BASE_DIR = Path(__file__).resolve().parent
 
 
@@ -52,7 +53,7 @@ class ChatUIHandler(SimpleHTTPRequestHandler):
         backend_request = Request(f"{BACKEND_URL}?{query}", method="POST")
 
         try:
-            with urlopen(backend_request, timeout=120) as response:
+            with urlopen(backend_request, timeout=BACKEND_TIMEOUT) as response:
                 body = response.read().decode("utf-8")
                 data = json.loads(body or "{}")
         except HTTPError as error:
@@ -104,7 +105,13 @@ def run() -> None:
     server = ThreadingHTTPServer((HOST, PORT), ChatUIHandler)
     print(f"UI server running at http://{HOST}:{PORT}")
     print(f"Proxying chat requests to {BACKEND_URL}")
-    server.serve_forever()
+
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nUI server stopped.")
+    finally:
+        server.server_close()
 
 
 if __name__ == "__main__":

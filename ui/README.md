@@ -26,3 +26,4 @@ http://127.0.0.1:3000
 
 - The UI server proxies requests to `http://127.0.0.1:8000/chat` by default.
 - You can change that with the `BACKEND_URL` environment variable if needed.
+- You can change the proxy wait time with `BACKEND_TIMEOUT_SECONDS`.
