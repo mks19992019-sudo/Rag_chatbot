@@ -1,72 +1,59 @@
-from langgraph.graph import StateGraph , END  ,START , MessagesState
-from typing import TypedDict ,Annotated , Literal
-from langgraph.graph import add_messages
-from pydantic import BaseModel
-from langchain_core.messages import BaseMessage ,HumanMessage ,AIMessage
-from langchain_openai import ChatOpenAI
+import atexit
 import os
-from dotenv import load_dotenv
-#from langgraph.checkpoint.memory import MemorySaver
-from langgraph.checkpoint.postgres import PostgresSaver
-from langgraph.prebuilt import create_react_agent
 
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
+from langgraph.checkpoint.postgres import PostgresSaver
+from langgraph.graph import END, START, MessagesState, StateGraph
+from langgraph.prebuilt import create_react_agent
+from psycopg_pool import ConnectionPool
 
 
 load_dotenv()
-apikey=os.getenv('OLLAMA_API_KEY')
 
+model = ChatGroq(model="openai/gpt-oss-120b")
 
-# model 
-model = ChatOpenAI(
-    api_key=apikey,
-    base_url='https://ollama.com/v1',
-    model='minimax-m2.7',
-)
-
-agent =create_react_agent(
+agent = create_react_agent(
     model=model,
     tools=[],
-    prompt='''You are a helpful assistant that answers questions based on the given context. If you don't know the answer, say you don't know. Always use the provided tools if they are relevant to the question.''',
+    prompt=(
+        "You are a helpful assistant that answers questions based on the given "
+        "context. If you don't know the answer, say you don't know. Always use "
+        "the provided tools if they are relevant to the question."
+    ),
 )
 
 
-# node
-def AI_agent(State:MessagesState):
-    q = State['messages']
-    
+def AI_agent(state: MessagesState):
+    result = agent.invoke({"messages": state["messages"]})
 
-    result  = agent.invoke({'messages':q})
-
-    return {'messages' : result['messages']}
-
-    
+    return {"messages": result["messages"]}
 
 
 graph = StateGraph(MessagesState)
 
-graph.add_node('AI_agent',AI_agent)
-
-graph.add_edge(START,'AI_agent')
-
-graph.add_edge('AI_agent',END)
+graph.add_node("AI_agent", AI_agent)
+graph.add_edge(START, "AI_agent")
+graph.add_edge("AI_agent", END)
 
 
+DB_URI = os.getenv("DB_URI", "postgresql://postgres:postgres@localhost:5442/postgres")
 
-DB_URI = "postgresql://postgres:postgres@localhost:5442/postgres"
+connection_pool = ConnectionPool(
+    conninfo=DB_URI,
+    min_size=1,
+    max_size=5,
+    open=True,
+    kwargs={"autocommit": True, "prepare_threshold": 0},
+)
+# for closing the conection
+atexit.register(connection_pool.close)
 
-t1 = {"configurable":{'thread_id': 'test_id'}}
+checkpointer = PostgresSaver(connection_pool)
 
+checkpointer.setup()
 
-with PostgresSaver.from_conn_string(DB_URI) as cp:
-
-    work_flow = graph.compile(checkpointer=cp)
-
-    
-
-
-
-
-
+work_flow = graph.compile(checkpointer=checkpointer)
 
 
 

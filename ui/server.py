@@ -7,7 +7,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
@@ -49,8 +49,15 @@ class ChatUIHandler(SimpleHTTPRequestHandler):
             )
             return
 
-        query = urlencode({"user": message, "thread_id": thread_id})
-        backend_request = Request(f"{BACKEND_URL}?{query}", method="POST")
+        backend_body = json.dumps(
+            {"user": message, "thread_id": thread_id}
+        ).encode("utf-8")
+        backend_request = Request(
+            BACKEND_URL,
+            data=backend_body,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
 
         try:
             with urlopen(backend_request, timeout=BACKEND_TIMEOUT) as response:

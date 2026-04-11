@@ -1,20 +1,28 @@
 from fastapi import FastAPI
-from langchain_core.messages import BaseMessage ,HumanMessage ,AIMessage
 from graph import work_flow
+from langchain_core.messages import HumanMessage
+from pydantic import AliasChoices, BaseModel, Field
 
 
 app = FastAPI()
 
+
+class ChatRequest(BaseModel):
+    user: str = Field(validation_alias=AliasChoices("user", "message"))
+    thread_id: str = Field(validation_alias=AliasChoices("thread_id", "threadId"))
+
+
+def _run_chat(user: str, thread_id: str) -> dict[str, str]:
+    initial_state = {"messages": [HumanMessage(content=user)]}
+    config = {"configurable": {"thread_id": thread_id}}
+
+    answer = work_flow.invoke(initial_state, config=config)
+
+    return {"response": answer["messages"][-1].content}
+
+
 @app.post("/chat")
-def chat(user:str,thread_id:str):
-    inital_state={
-        'messages':[HumanMessage(content=user)]
-
-    }
-    conf1 ={"configurable":{'thread_id':thread_id}}
-
-    ans = work_flow.invoke(inital_state,config=conf1)
-
-    return {'response':ans['messages'][-1].content}
+def chat(request: ChatRequest):
+    return _run_chat(request.user, request.thread_id)
 
     
